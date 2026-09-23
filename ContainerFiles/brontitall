@@ -1,0 +1,37 @@
+FROM fedora:latest
+
+LABEL com.github.containers.toolbox="true" \
+      com.github.debarshiray.toolbox="true" \
+      org.opencontainers.image.title="brontitall" \
+      org.opencontainers.image.description="A custom environment built via boxkit"
+
+RUN dnf -y update && dnf -y install \
+    git curl wget gcc gcc-c++ gcc-gfortran cmake ninja-build make pkgconf \
+    llvm llvm-devel clang clang-devel lld libomp libomp-devel \
+    golang \
+    && dnf clean all
+
+RUN dnf -y install \
+    openblas openblas-devel \
+    vulkan-loader vulkan-loader-devel vulkan-headers vulkan-tools \
+    mimalloc mimalloc-devel \
+    && dnf clean all
+
+RUN dnf -y install \
+    rocm-dev rocm-hip-sdk rocm-device-libs \
+    hipblas-devel hipblas-common \
+    && dnf clean all
+
+RUN dnf -y install \
+    btop nvtop radeontop \
+    vim jq tmux 
+
+RUN dnf config-manager addrepo --from-repofile=https://developer.download.nvidia.com/compute/cuda/repos/fedora44/$(uname -m)/cuda-fedora44.repo && \
+    dnf clean all && \
+    dnf config-manager setopt cuda-fedora44-$(uname -m).exclude=nvidia-driver,nvidia-modprobe,nvidia-persistenced,nvidia-settings,nvidia-libXNVCtrl,nvidia-xconfig && \
+    dnf -y install cuda-toolkit xorg-x11-drv-nvidia-cuda
+
+ENV PATH="${PATH}:/usr/local/cuda/bin"
+ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/cuda/lib64"
+
+ENV LANG=en_US.UTF-8
