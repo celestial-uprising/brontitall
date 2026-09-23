@@ -24,7 +24,7 @@ RUN dnf -y install \
 RUN dnf config-manager addrepo --from-repofile=https://developer.download.nvidia.com/compute/cuda/repos/fedora44/$(uname -m)/cuda-fedora44.repo && \
     dnf clean all && \
     dnf config-manager setopt cuda-fedora44-$(uname -m).exclude=nvidia-driver,nvidia-modprobe,nvidia-persistenced,nvidia-settings,nvidia-libXNVCtrl,nvidia-xconfig && \
-    dnf -y install cuda-toolkit xorg-x11-drv-nvidia-cuda
+    dnf -y install cuda-toolkit
 
 COPY aocc_part_* /tmp/
 
