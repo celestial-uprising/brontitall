@@ -31,7 +31,16 @@ RUN dnf config-manager addrepo --from-repofile=https://developer.download.nvidia
     dnf config-manager setopt cuda-fedora44-$(uname -m).exclude=nvidia-driver,nvidia-modprobe,nvidia-persistenced,nvidia-settings,nvidia-libXNVCtrl,nvidia-xconfig && \
     dnf -y install cuda-toolkit xorg-x11-drv-nvidia-cuda
 
+COPY aocc_part_* /tmp/
+
+RUN cat /tmp/aocc_part_* > /tmp/aocc-compiler-5.2.0-1.x86_64.rpm
+
+RUN dnf localinstall -y /tmp/aocc-compiler-5.2.0-1.x86_64.rpm && \
+    rm -f /tmp/aocc_part_* /tmp/aocc-compiler-5.2.0-1.x86_64.rpm
+
+ENV PATH="/opt/AMD/aocc-compiler-5.2.0/bin:${PATH}"
+ENV LD_LIBRARY_PATH="/opt/AMD/aocc-compiler-5.2.0/lib:${LD_LIBRARY_PATH}"
 ENV PATH="${PATH}:/usr/local/cuda/bin"
 ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/cuda/lib64"
-
 ENV LANG=en_US.UTF-8
+RUN echo "source /opt/AMD/aocc-compiler-5.2.0/setenv_AOCC.sh" >> /etc/bashrc
