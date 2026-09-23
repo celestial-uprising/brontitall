@@ -30,7 +30,8 @@ COPY aocc_part_* /tmp/
 
 RUN cat /tmp/aocc_part_* > /tmp/aocc-compiler-5.2.0-1.x86_64.rpm
 
-RUN dnf install -y /tmp/aocc-compiler-5.2.0-1.x86_64.rpm && \
+RUN dnf install -y libquadmath glibc && \
+    rpm -ivh --nodigest --nosignature /tmp/aocc-compiler-5.2.0-1.x86_64.rpm && \
     rm -f /tmp/aocc_part_* /tmp/aocc-compiler-5.2.0-1.x86_64.rpm
 
 ENV PATH="/opt/AMD/aocc-compiler-5.2.0/bin:${PATH}"
