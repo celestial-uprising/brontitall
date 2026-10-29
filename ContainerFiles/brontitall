@@ -3,18 +3,20 @@ FROM fedora:latest
 LABEL com.github.containers.toolbox="true" \
       com.github.debarshiray.toolbox="true" \
       org.opencontainers.image.title="brontitall" \
-      org.opencontainers.image.description="A custom environment built via boxkit"
+      org.opencontainers.image.description="Distrobox container image for development with AMD's AOCC Compiler, Vulkan, and Cuda"
 
 RUN dnf -y update && dnf -y install \
     git curl wget gcc gcc-c++ gcc-gfortran cmake ninja-build make pkgconf \
     llvm llvm-devel clang clang-devel lld libomp libomp-devel \
-    golang \
+    golang glslc spirv-headers-devel openssl-devel \
+    libcxx-devel libcxxabi-devel \
     && dnf clean all
 
 RUN dnf -y install \
     openblas openblas-devel \
     vulkan-loader vulkan-loader-devel vulkan-headers vulkan-tools \
     mimalloc mimalloc-devel \
+    mesa-vulkan-drivers \
     && dnf clean all
 
 RUN dnf -y install \
@@ -24,7 +26,7 @@ RUN dnf -y install \
 RUN dnf config-manager addrepo --from-repofile=https://developer.download.nvidia.com/compute/cuda/repos/fedora44/$(uname -m)/cuda-fedora44.repo && \
     dnf clean all && \
     dnf config-manager setopt cuda-fedora44-$(uname -m).exclude=nvidia-driver,nvidia-modprobe,nvidia-persistenced,nvidia-settings,nvidia-libXNVCtrl,nvidia-xconfig && \
-    dnf -y install cuda-toolkit
+    dnf -y install cuda-toolkit nvidia-driver-libs
 
 COPY aocc_part_* /tmp/
 
