@@ -22,8 +22,10 @@ RUN dnf config-manager addrepo --from-repofile=https://developer.download.nvidia
     rm -rf /var/cache/dnf/*
 
 COPY ContainerFiles/aocc_part_* /tmp/
-RUN cat /tmp/aocc_part_* | rpm -ivh --nodigest --nosignature - && \
-    rm -f /tmp/aocc_part_*
+
+RUN cat /tmp/aocc_part_* > /tmp/aocc.rpm && \
+    rpm -ivh --nodigest --nosignature /tmp/aocc.rpm && \
+    rm -f /tmp/aocc_part_* /tmp/aocc.rpm
 
 ENV PATH="/opt/AMD/aocc-compiler-5.2.0/bin:/usr/local/cuda/bin:${PATH}" \
     LD_LIBRARY_PATH="/opt/AMD/aocc-compiler-5.2.0/lib:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}" \
