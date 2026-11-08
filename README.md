@@ -1,9 +1,23 @@
-Brontitall is a distrobox/toolbox compatible container image; for software development with AOCC (*AMD's Optimized C Compiler*).
+Brontitall is a distrobox compatible container image; for development with AOCC (*AMD's Optimized C Compiler*).
 
-*STATE* = **alpha**
+*STATE* = *Beta*
 
-*STATUS* = **live**
+*STATUS* = *on ghcr.io*
 
-Image use:
+Vulkan--
 ```
-distrobox create -n brotitall -i ghcr.io/celestial-uprising/brontitall:latest
+podman pull ghcr.io/celestial-uprising/brontitall:latest
+
+distrobox create -n brontitall -i ghcr.io/celestial-uprising/brontitall:latest
+
+distrobox enter brotitall 
+```
+
+Cuda--
+```
+podman pull ghcr.io/celestial-uprising/brontitall-nvidia:latest
+
+distrobox create --nvidia -n brontitall-nv -i ghcr.io/celestial-uprising/brontitall-nvidia:latest
+
+distrobox enter brontitall-nv
+```
