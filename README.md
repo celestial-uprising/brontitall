@@ -1,10 +1,6 @@
 Brontitall is a distrobox compatible container image; for development with AOCC (*AMD's Optimized C Compiler*).
 
-*STATE* = *Beta*
-
-*STATUS* = *on ghcr.io*
-
-Vulkan--
+*Vulkan* -- (*about 2.04GiB*)
 ```
 podman pull ghcr.io/celestial-uprising/brontitall:latest
 
@@ -13,7 +9,7 @@ distrobox create -n brontitall -i ghcr.io/celestial-uprising/brontitall:latest
 distrobox enter brotitall 
 ```
 
-Cuda--
+*CUDA* -- (*about 10.4GiB*)
 ```
 podman pull ghcr.io/celestial-uprising/brontitall-nvidia:latest
 
