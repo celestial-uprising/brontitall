@@ -27,6 +27,7 @@ jobs:
       matrix:
         containerfile: 
           - brontitall
+          - brontitall-nvidia
     steps:
       # Clone code to runner
       - name: Checkout
