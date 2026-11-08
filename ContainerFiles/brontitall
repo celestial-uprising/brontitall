@@ -13,7 +13,7 @@ RUN dnf -y update && dnf -y install \
     ccache \
     && dnf clean all
 
-COPY aocc_part_* /tmp/
+COPY ContainerFiles/aocc_part_* /tmp/
 
 RUN cat /tmp/aocc_part_* > /tmp/aocc-compiler-5.2.0-1.x86_64.rpm
 
