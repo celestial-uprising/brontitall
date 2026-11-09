@@ -1,4 +1,4 @@
-FROM fedora:45
+FROM fedora:44
 
 LABEL com.github.containers.toolbox="true" \
       com.github.debarshiray.toolbox="true" \
@@ -15,8 +15,8 @@ RUN dnf -y update && \
     dnf clean all && \
     rm -rf /var/cache/dnf/*
 
-RUN dnf config-manager addrepo --from-repofile=https://developer.download.nvidia.com/compute/cuda/repos/fedora45/$(uname -m)/cuda-fedora45.repo && \
-    dnf config-manager setopt cuda-fedora45-$(uname -m).exclude=nvidia-driver,nvidia-modprobe,nvidia-persistenced,nvidia-settings,nvidia-libXNVCtrl,nvidia-xconfig && \
+RUN dnf config-manager addrepo --from-repofile=https://developer.download.nvidia.com/compute/cuda/repos/fedora44/$(uname -m)/cuda-fedora44.repo && \
+    dnf config-manager setopt cuda-fedora44-$(uname -m).exclude=nvidia-driver,nvidia-modprobe,nvidia-persistenced,nvidia-settings,nvidia-libXNVCtrl,nvidia-xconfig && \
     dnf -y install cuda-toolkit && \
     dnf clean all && \
     rm -rf /var/cache/dnf/*
