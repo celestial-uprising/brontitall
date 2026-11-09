@@ -2,8 +2,8 @@ FROM fedora:43
 
 LABEL com.github.containers.toolbox="true" \
       com.github.debarshiray.toolbox="true" \
-      org.opencontainers.image.title="brontitall" \
-      org.opencontainers.image.description="A distrobox & toolbox image for building and running llama.cpp (cpu/vulkan/openblas/openmp/lto) with the AOCC compiler from AMD (for Zen processor based systems)"
+      org.opencontainers.image.title="brequinda" \
+      org.opencontainers.image.description="A distrobox & toolbox image for building and running llama.cpp with Cuda (openblas/openmp/lto) with the AOCC compiler from AMD (for Zen processor based systems)"
 
 RUN dnf -y update && \
     dnf -y install --setopt=install_weak_deps=False \
