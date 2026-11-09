@@ -28,7 +28,7 @@ jobs:
         containerfile: 
           - brontitall
           - brequinda
-          - bethsalamin
+          - bethselamin
           - bartledan
     steps:
       # Clone code to runner
