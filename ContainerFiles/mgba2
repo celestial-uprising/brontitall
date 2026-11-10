@@ -1,0 +1,66 @@
+FROM fedora:43
+
+RUN dnf -y update && \
+    dnf -y install --setopt=install_weak_deps=False \
+    gcc \
+    gcc-c++ \
+    cmake \
+    ninja-build \
+    lld \
+    mimalloc \
+    mimalloc-devel \
+    git \
+    wget \
+    tar \
+    qt6-qtbase-devel \
+    libzip-devel \
+    libpng-devel \
+    zlib-devel \
+    SDL2-devel \
+    libquadmath \
+    libquadmath-devel \
+    && dnf clean all && \
+    rm -rf /var/cache/dnf/*
+
+COPY aocc_part_* /tmp/
+RUN cat /tmp/aocc_part_* > /tmp/aocc.rpm && \
+    rpm -ivh --nodigest --nosignature /tmp/aocc.rpm && \
+    rm -f /tmp/aocc_part_* /tmp/aocc.rpm
+
+ENV PATH="/opt/AMD/aocc-compiler-5.2.0/bin:${PATH}" \
+    LD_LIBRARY_PATH="/opt/AMD/aocc-compiler-5.2.0/lib:${LD_LIBRARY_PATH}" \
+    LANG=en_US.UTF-8
+
+RUN echo "source /opt/AMD/aocc-compiler-5.2.0/setenv_AOCC.sh" >> /etc/bashrc
+
+WORKDIR /tmp
+RUN git clone https://github.com/mgba-emu/mgba.git /tmp/mgba
+
+WORKDIR /tmp/mgba/build
+RUN cmake -B . -G Ninja \
+    -DCMAKE_INSTALL_PREFIX=/usr/local \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DUSE_FFMPEG=OFF \
+    -DUSE_LUA=OFF \
+    -DUSE_EDITLINE=OFF \
+    -DBUILD_LIBRETRO=OFF \
+    -DCMAKE_C_COMPILER=clang \
+    -DCMAKE_CXX_COMPILER=clang++ \
+    -DCMAKE_C_FLAGS="-march=native -O3 -Ofast -flto=full -fno-semantic-interposition -falign-functions=32 -fomit-frame-pointer -fstrict-aliasing -fvisibility=hidden -fno-plt -mprefer-vector-width=256 -ffast-math -mllvm -unroll-threshold=100" \
+    -DCMAKE_CXX_FLAGS="-march=native -O3 -Ofast -flto=full -fno-semantic-interposition -falign-functions=32 -fomit-frame-pointer -fstrict-aliasing -fvisibility=hidden -fno-plt -mprefer-vector-width=256 -ffast-math -mllvm -unroll-threshold=100" \
+    -DCMAKE_EXE_LINKER_FLAGS="-flto=full -fuse-ld=lld -lmimalloc -Wl,-mllvm,-threads=$(nproc)" \
+    .. && \
+    ninja && \
+    ninja install
+
+RUN strip --strip-all /usr/local/bin/mgba-qt
+
+RUN rm -rf /tmp/mgba
+
+RUN useradd -ms /bin/bash builder && \
+    echo "builder ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+USER builder
+WORKDIR /home/builder
+
+CMD ["/bin/bash"]
