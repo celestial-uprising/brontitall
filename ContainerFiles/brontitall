@@ -1,9 +1,9 @@
-FROM fedora:43
+FROM fedora:rawhide
 
 LABEL com.github.containers.toolbox="true" \
       com.github.debarshiray.toolbox="true" \
       org.opencontainers.image.title="brontitall" \
-      org.opencontainers.image.description="A distrobox & toolbox image for building and running llama.cpp with Vulkan (openblas/openmp/lto) with the AOCC compiler from AMD (for Zen processor based systems)"
+      org.opencontainers.image.description="A distrobox image for building and running llama.cpp (Vulkan) with AOCC v6"
 
 RUN dnf -y update && \
     dnf -y install --setopt=install_weak_deps=False \
@@ -15,14 +15,14 @@ RUN dnf -y update && \
     dnf clean all && \
     rm -rf /var/cache/dnf/*
 
-COPY ContainerFiles/aocc_part_* /tmp/
+COPY ContainerFiles/aocc-v6/aocc* /tmp/
 
-RUN cat /tmp/aocc_part_* > /tmp/aocc.rpm && \
+RUN cat /tmp/aocc* > /tmp/aocc.rpm && \
     rpm -ivh --nodigest --nosignature /tmp/aocc.rpm && \
-    rm -f /tmp/aocc_part_* /tmp/aocc.rpm
+    rm -f /tmp/aocc*
 
-ENV PATH="/opt/AMD/aocc-compiler-5.2.0/bin:${PATH}" \
-    LD_LIBRARY_PATH="/opt/AMD/aocc-compiler-5.2.0/lib:${LD_LIBRARY_PATH}" \
+ENV PATH="/opt/AMD/aocc-compiler-6.0.0/bin:${PATH}" \
+    LD_LIBRARY_PATH="/opt/AMD/aocc-compiler-6.0.0/lib:${LD_LIBRARY_PATH}" \
     LANG=en_US.UTF-8
 
-RUN echo "source /opt/AMD/aocc-compiler-5.2.0/setenv_AOCC.sh" >> /etc/bashrc
+RUN echo "source /opt/AMD/aocc-compiler-6.0.0/setenv_AOCC.sh" >> /etc/bashrc

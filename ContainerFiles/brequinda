@@ -1,4 +1,4 @@
-FROM fedora:43
+FROM fedora:44
 
 LABEL com.github.containers.toolbox="true" \
       com.github.debarshiray.toolbox="true" \
@@ -15,20 +15,20 @@ RUN dnf -y update && \
     dnf clean all && \
     rm -rf /var/cache/dnf/*
 
-RUN dnf config-manager addrepo --from-repofile=https://developer.download.nvidia.com/compute/cuda/repos/fedora43/$(uname -m)/cuda-fedora43.repo && \
-    dnf config-manager setopt cuda-fedora43-$(uname -m).exclude=nvidia-driver,nvidia-modprobe,nvidia-persistenced,nvidia-settings,nvidia-libXNVCtrl,nvidia-xconfig && \
+RUN dnf config-manager addrepo --from-repofile=https://developer.download.nvidia.com/compute/cuda/repos/fedora44/$(uname -m)/cuda-fedora44.repo && \
+    dnf config-manager setopt cuda-fedora44-$(uname -m).exclude=nvidia-driver,nvidia-modprobe,nvidia-persistenced,nvidia-settings,nvidia-libXNVCtrl,nvidia-xconfig && \
     dnf -y install cuda-toolkit && \
     dnf clean all && \
     rm -rf /var/cache/dnf/*
 
-COPY ContainerFiles/aocc_part_* /tmp/
+COPY ContainerFiles/aocc-v6/aocc* /tmp/
 
-RUN cat /tmp/aocc_part_* > /tmp/aocc.rpm && \
+RUN cat /tmp/aocc* > /tmp/aocc.rpm && \
     rpm -ivh --nodigest --nosignature /tmp/aocc.rpm && \
-    rm -f /tmp/aocc_part_* /tmp/aocc.rpm
+    rm -f /tmp/aocc*
 
-ENV PATH="/opt/AMD/aocc-compiler-5.2.0/bin:/usr/local/cuda/bin:${PATH}" \
-    LD_LIBRARY_PATH="/opt/AMD/aocc-compiler-5.2.0/lib:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}" \
+ENV PATH="/opt/AMD/aocc-compiler-6.0.0/bin:/usr/local/cuda/bin:${PATH}" \
+    LD_LIBRARY_PATH="/opt/AMD/aocc-compiler-6.0.0/lib:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}" \
     LANG=en_US.UTF-8
 
-RUN echo "source /opt/AMD/aocc-compiler-5.2.0/setenv_AOCC.sh" >> /etc/bashrc
+RUN echo "source /opt/AMD/aocc-compiler-6.0.0/setenv_AOCC.sh" >> /etc/bashrc
