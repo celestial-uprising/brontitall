@@ -11,7 +11,7 @@ RUN dnf -y update && \
     lld libomp libomp-devel glibc-devel libstdc++-devel openssl-devel vim \
     vulkan-loader vulkan-loader-devel vulkan-headers vulkan-tools glslc \
     openblas openblas-devel mimalloc mimalloc-devel spirv-headers-devel \
-    ccache && \
+    ccache libquadmath libquadmath-devel && \
     dnf clean all && \
     rm -rf /var/cache/dnf/*
 
