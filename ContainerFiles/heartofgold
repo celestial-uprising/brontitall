@@ -1,0 +1,102 @@
+FROM fedora:44
+
+LABEL com.github.containers.toolbox="true" \
+      com.github.debarshiray.toolbox="true" \
+      org.opencontainers.image.title="heartofgold" \
+      org.opencontainers.image.description="A distrobox image for development with AOCC v6"
+
+RUN dnf -y install \
+    https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
+    https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+
+RUN dnf -y update && dnf -y install --setopt=install_weak_deps=False \
+    noopenh264-devel \
+    liblc3-devel \
+    libaribcaption-devel \
+    vvenc-devel \
+    rav1e-devel \
+    libshaderc-devel \
+    libvpl-devel \
+    vulkan-loader-devel \
+    codec2-devel \
+    game-music-emu-devel \
+    ilbc-devel \
+    libbs2b-devel \
+    libchromaprint-devel \
+    libklvanc-devel \
+    libplacebo-devel \
+    libsmbclient-devel \
+    libwebp-devel \
+    noopenh264-devel \
+    nv-codec-headers \
+    rubberband-devel \
+    snappy-devel \
+    svt-av1-devel \
+    tesseract-devel \
+    twolame-devel \
+    vapoursynth-devel \
+    wavpack-devel \
+    zeromq-devel \
+    a52dec-devel \
+    faad2-devel \
+    ffmpeg-devel \
+    gpac-static \
+    libglvnd-devel \
+    libjpeg-devel \
+    libmad-devel \
+    libpng-devel \
+    libtheora-devel \
+    libvorbis-devel \
+    mesa-libGLU-devel \ 
+    openjpeg2-devel \
+    xvidcore-devel \
+    rpm-build \
+    rpmdevtools \
+    git \
+    curl \
+    wget \
+    gcc \
+    gcc-c++ \
+    gcc-gfortran \
+    cmake \
+    ninja-build \
+    make \
+    pkgconf \
+    lld \
+    glibc-devel \
+    libstdc++-devel \
+    openssl-devel \
+    vim \
+    mimalloc \
+    mimalloc-devel \
+    ccache \
+    libquadmath \
+    libquadmath-devel \
+    nasm \
+    yasm \
+    perl-IPC-Cmd \
+    && dnf clean all && rm -rf /var/cache/dnf/*
+
+COPY ContainerFiles/aocc-v6/aocc* /tmp/
+
+RUN cat /tmp/aocc* > /tmp/aocc.rpm && \
+    rpm -ivh --nodigest --nosignature /tmp/aocc.rpm && \
+    rm -f /tmp/aocc*
+
+COPY ContainerFiles/aocc-wrapper.sh /tmp/aocc-wrapper.sh
+
+RUN mv /opt/AMD/aocc-compiler-6.0.0/bin/aoc /opt/AMD/aocc-compiler-6.0.0/bin/aoc.real && \
+    mv /opt/AMD/aocc-compiler-6.0.0/bin/aoc++ /opt/AMD/aocc-compiler-6.0.0/bin/aoc_cpp.real && \
+    cp /tmp/aocc-wrapper.sh /opt/AMD/aocc-compiler-6.0.0/bin/aoc && \
+    cp /tmp/aocc-wrapper.sh /opt/AMD/aocc-compiler-6.0.0/bin/aoc++ && \
+    chmod +x /opt/AMD/aocc-compiler-6.0.0/bin/aoc /opt/AMD/aocc-compiler-6.0.0/bin/aoc++ && \
+    rm -f /tmp/aocc-wrapper.sh
+
+ENV PATH="/opt/AMD/aocc-compiler-6.0.0/bin:${PATH}" \
+    LD_LIBRARY_PATH="/opt/AMD/aocc-compiler-6.0.0/lib:${LD_LIBRARY_PATH}" \
+    LANG=en_US.UTF-8
+
+RUN echo "source /opt/AMD/aocc-compiler-6.0.0/setenv_AOCC.sh" >> /etc/bashrc && \
+    mkdir -p /etc/rpm
+
+COPY ContainerFiles/macros.aocc /etc/rpm/macros.aocc

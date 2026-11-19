@@ -1,0 +1,7 @@
+%__cc /opt/AMD/aocc-compiler-6.0.0/bin/aoc
+%__cxx /opt/AMD/aocc-compiler-6.0.0/bin/aoc++
+%__ld /usr/bin/ld.lld
+%optflags -O3 -march=znver3 -mtune=znver3 -flto -fno-asynchronous-unwind-tables -fvector-transform -floop-transform -fpic -pipe
+%build_cflags %{optflags}
+%build_cxxflags %{optflags}
+%build_ldflags -fuse-ld=lld -Wl,-O3 -Wl,--build-id -Wl,--as-needed -L/opt/AMD/aocc-compiler-6.0.0/lib -lstdc++
