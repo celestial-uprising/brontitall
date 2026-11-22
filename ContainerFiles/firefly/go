@@ -3,21 +3,15 @@
 # ==============================================================================
 FROM fedora:44 AS builder
 # ==============================================================================
-
------>
------>
------>
 RUN dnf install -y \
+    libquadmath \
+    ncurses \
     golang \
     git \
     make \
     pkgconf-pkg-config \
     glibc-devel \
     && dnf clean all
------>
------>
------>
-
 # ==============================================================================
 COPY ContainerFiles/aocc-v6/aocc* /tmp/
 RUN cat /tmp/aocc* > /tmp/aocc.rpm && \
@@ -28,7 +22,6 @@ ENV AOCC_DIR="/opt/AMD/aocc-compiler-6.0.0"
 ENV PATH="${AOCC_DIR}/bin:${PATH}"
 ENV LIBRARY_PATH="${AOCC_DIR}/lib:${AOCC_DIR}/lib32:${LIBRARY_PATH}"
 ENV LD_LIBRARY_PATH="${AOCC_DIR}/lib:${AOCC_DIR}/lib32:${LD_LIBRARY_PATH}"
-# ==============================================================================
 # ==============================================================================
 ENV GOPATH="/go" \
     GOBIN="/out/bin" \
@@ -44,20 +37,29 @@ ENV GOPATH="/go" \
     CGO_LDFLAGS="-fuse-ld=lld -l:libamdlibm.a"
 # ==============================================================================
 RUN mkdir -p /out/bin
-# ==============================================================================
 FROM builder AS compiler
-# ==============================================================================
 WORKDIR /build
 # ==============================================================================
-
------>
------>
------>
-# --- PATTERN A: Direct `go install` from GitHub (Pure Go, 100% static) ---
-# RUN go install -trimpath -ldflags="-s -w" ://github.com && \
-#     go install -trimpath -ldflags="-s -w" ://github.com && \
-#     go install -trimpath -ldflags="-s -w" ://github.com
-
+RUN go install -trimpath -ldflags="-s -w" github.com/szktkfm/mdtt/cmd/mdtt@latest
+# ==============================================================================
+RUN go install -trimpath -ldflags="-s -w" github.com/termkit/gama@latest
+# ==============================================================================
+RUN go install -trimpath -ldflags="-s -w" github.com/jesseduffield/lazygit@latest
+# ==============================================================================
+RUN go install -trimpath -ldflags="-s -w" github.com/charmbracelet/glow/v2@latest
+# ==============================================================================
+RUN go install -trimpath -ldflags="-s -w" github.com/chojs23/ec/cmd/ec@latest
+# ==============================================================================
+RUN go install -trimpath -ldflags="-s -w" github.com/alvinunreal/lazyskills/cmd/lazyskills@latest
+# ==============================================================================
+RUN go install -trimpath -ldflags="-s -w" github.com/yutat23/lsoff@latest
+# ==============================================================================
+RUN go install -trimpath -ldflags="-s -w" github.com/Ri4dH/failtrace/cmd/failtrace@latest
+# ==============================================================================
+RUN go install -trimpath -ldflags="-s -w" github.com/pedrosousa13/onda@latest
+# ==============================================================================
+RUN go install -trimpath -ldflags="-s -w" github.com/halpworld/halpradio@latest 
+# ==============================================================================
 # --- PATTERN B: Clone & Build a Custom GitHub Repo (e.g., projects with Makefiles or subpackages) ---
 # RUN git clone --depth 1 https://github.com && \
 #     cd go-repo && \
@@ -66,10 +68,6 @@ WORKDIR /build
 # --- PATTERN C: Projects that REQUIRE CGO (e.g., SQLite / C bindings) ---
 # (Override CGO_ENABLED=1 inline so AOCC 6.0 compiles the C bindings with znver3 flags)
 # RUN CGO_ENABLED=1 go install -trimpath -ldflags="-s -w" ://github.com
------>
------>
------>
-
 # ==============================================================================
 FROM scratch AS export
 COPY --from=compiler /out/bin/ /usr/bin/
