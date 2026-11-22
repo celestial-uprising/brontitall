@@ -1,0 +1,56 @@
+# ==============================================================================
+# STAGE 1: Fedora 44 + Zig Builder
+# ==============================================================================
+FROM fedora:44 AS builder
+
+# 1. Install Zig, Git, and base tools
+# (Fedora 44 includes a current Zig package in its repos, or you can pull a specific tarball)
+RUN dnf install -y \
+    zig git curl xz tar llvm && \
+    dnf clean all
+
+# 2. Bake in Zen 3 (5700G) Zig Build Defaults
+ENV ZIG_GLOBAL_CACHE_DIR="/tmp/zig-cache" \
+    ZIG_LOCAL_CACHE_DIR="/tmp/zig-local-cache"
+
+# ==============================================================================
+# STAGE 2: Clone & Compile Zig Projects (FILL IN YOUR REPOS BELOW)
+# ==============================================================================
+FROM builder AS compiler
+
+WORKDIR /build
+RUN mkdir -p /out/bin
+
+# --- PATTERN A: Standard `build.zig` Project (`zig build`) ---
+# Flags explained:
+#   --release=fast   : Enables ReleaseFast optimizations across the project and dependencies
+#   -Dcpu=znver3     : Targets AMD Zen 3 (Ryzen 5700G) microarchitecture specifically
+#   --prefix /out    : Installs resulting binaries directly into /out/bin/
+#
+# RUN git clone --depth 1 https://github.com && \
+#     cd zig-project && \
+#     zig build --release=fast -Dcpu=znver3 --prefix /out && \
+#     llvm-strip --strip-unneeded /out/bin/*
+
+# --- PATTERN B: Single-File or Non-`build.zig` Project (`zig build-exe`) ---
+# RUN git clone --depth 1 https://github.com && \
+#     cd simple-zig-tool && \
+#     zig build-exe src/main.zig \
+#         -O ReleaseFast \
+#         -mcpu=znver3 \
+#         -fstrip \
+#         --name my-zig-tool && \
+#     mv my-zig-tool /out/bin/
+
+# --- PATTERN C: Static musl Binary (Zero glibc dependency) ---
+# (Append `-Dtarget=x86_64-linux-musl` if you want a 100% static binary)
+# RUN git clone --depth 1 https://github.com && \
+#     cd zig-cli && \
+#     zig build --release=fast -Dtarget=x86_64-linux-musl -Dcpu=znver3 --prefix /out
+
+# ==============================================================================
+# STAGE 3: Minimal Artifact Image (Copy this into your BlueBuild image)
+# ==============================================================================
+FROM scratch AS export
+COPY --from=compiler /out/bin/ /usr/bin/
+

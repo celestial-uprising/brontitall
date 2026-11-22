@@ -1,0 +1,100 @@
+# ==============================================================================
+# STAGE 1: Fedora 44 + AOCC 6.0 C/C++ Builder
+# ==============================================================================
+FROM fedora:44 AS builder
+
+# 1. Install C/C++ build systems, autotools, and common development headers
+RUN dnf install -y \
+    git make cmake ninja-build meson autoconf automake libtool \
+    pkgconf-pkg-config bison flex gperf texinfo nasm \
+    glibc-devel libstdc++-devel && \
+    dnf clean all
+
+# 2. Install AOCC 6.0
+COPY aocc-compiler-6.0.0.tar /tmp/
+RUN mkdir -p /opt/AMD && \
+    tar -xf /tmp/aocc-compiler-6.0.0.tar -C /opt/AMD && \
+    rm -f /tmp/aocc-compiler-6.0.0.tar
+
+ENV AOCC_DIR="/opt/AMD/aocc-compiler-6.0.0"
+ENV PATH="${AOCC_DIR}/bin:${PATH}"
+ENV LIBRARY_PATH="${AOCC_DIR}/lib:${AOCC_DIR}/lib32:${LIBRARY_PATH}"
+ENV LD_LIBRARY_PATH="${AOCC_DIR}/lib:${AOCC_DIR}/lib32:${LD_LIBRARY_PATH}"
+ENV C_INCLUDE_PATH="${AOCC_DIR}/include:${C_INCLUDE_PATH}"
+ENV CPLUS_INCLUDE_PATH="${AOCC_DIR}/include:${CPLUS_INCLUDE_PATH}"
+
+# 3. Bake in Zen 3 (5700G) + AOCC 6.0 + Full LTO Environment Variables
+ENV CC="aoc" \
+    CXX="aoc++" \
+    AR="llvm-ar" \
+    NM="llvm-nm" \
+    RANLIB="llvm-ranlib" \
+    STRIP="llvm-strip" \
+    LD="ld.lld" \
+    MAKEFLAGS="-j16" \
+    CMAKE_BUILD_PARALLEL_LEVEL="16" \
+    NINJA_STATUS="[%f/%t] "
+
+# Aggressive Zen 3 + AOCC LTO Optimization Flags
+ENV CFLAGS="-O3 -march=znver3 -mtune=znver3 -flto -zopt -fvector-transform -fscalar-transform -floop-transform -faggressive-loop-transform -fremap-arrays -fstruct-layout=7 -fveclib=AMDLIBM" \
+    CXXFLAGS="-O3 -march=znver3 -mtune=znver3 -flto -zopt -fvector-transform -fscalar-transform -floop-transform -faggressive-loop-transform -fremap-arrays -fstruct-layout=7 -fveclib=AMDLIBM" \
+    LDFLAGS="-fuse-ld=lld -flto -Wl,-O3,--gc-sections,--as-needed -l:libamdlibm.a"
+
+# ==============================================================================
+# STAGE 2: Clone & Compile C/C++ GitHub Projects (FILL IN YOUR REPOS BELOW)
+# ==============================================================================
+FROM builder AS compiler
+
+WORKDIR /build
+RUN mkdir -p /out/bin /out/lib64 /out/share
+
+# --- PATTERN A: Standard Makefile Project ---
+# RUN git clone --depth 1 https://github.com && \
+#     cd make-project && \
+#     make PREFIX=/out && \
+#     make PREFIX=/out install && \
+#     llvm-strip --strip-unneeded /out/bin/*
+
+# --- PATTERN B: CMake Project ---
+# RUN git clone --depth 1 https://github.com && \
+#     cmake -S cmake-project -B cmake-project/build -G Ninja \
+#         -DCMAKE_BUILD_TYPE=Release \
+#         -DCMAKE_INSTALL_PREFIX=/out \
+#         -DCMAKE_C_COMPILER=aoc \
+#         -DCMAKE_CXX_COMPILER=aoc++ \
+#         -DCMAKE_AR=/opt/AMD/aocc-compiler-6.0.0/bin/llvm-ar \
+#         -DCMAKE_RANLIB=/opt/AMD/aocc-compiler-6.0.0/bin/llvm-ranlib && \
+#     cmake --build cmake-project/build && \
+#     cmake --install cmake-project/build && \
+#     llvm-strip --strip-unneeded /out/bin/*
+
+# --- PATTERN C: Autotools (`./autogen.sh` or `./configure`) Project ---
+# RUN git clone --depth 1 https://github.com && \
+#     cd autotools-project && \
+#     ./autogen.sh && \
+#     ./configure --prefix=/out && \
+#     make && \
+#     make install && \
+#     llvm-strip --strip-unneeded /out/bin/*
+
+# --- PATTERN D: Meson Project ---
+# RUN git clone --depth 1 https://github.com && \
+#     meson setup meson-project/build meson-project \
+#         --prefix=/out \
+#         --buildtype=release \
+#         -Db_lto=true && \
+#     ninja -C meson-project/build install && \
+#     llvm-strip --strip-unneeded /out/bin/*
+
+# Clean out headers, static libs, and pkgconfig files so only runtime files remain
+RUN rm -rf /out/include /out/lib64/pkgconfig /out/lib64/*.a /out/lib/*.a
+
+# ==============================================================================
+# STAGE 3: Minimal Artifact Image (Copy this into your BlueBuild image)
+# ==============================================================================
+FROM scratch AS export
+COPY --from=compiler /out/bin/ /usr/bin/
+# Uncomment below if any of your C projects install shared libraries (.so) or manpages/data:
+# COPY --from=compiler /out/lib64/ /usr/local/lib64/
+# COPY --from=compiler /out/share/ /usr/share/
+

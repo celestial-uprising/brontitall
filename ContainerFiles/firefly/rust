@@ -1,0 +1,211 @@
+# ==============================================================================
+# Fedora:44 + AOCCv6 + Rust - by Celestial Uprising
+# ==============================================================================
+FROM fedora:44 AS builder
+# ==============================================================================
+RUN dnf install -y \
+  curl \
+  git \
+  gcc \
+  gcc-c++ \
+  make \
+  cmake \
+  ninja-build \
+  perl-core \
+  nasm \
+  clang-devel \
+  pkgconf-pkg-config \
+  libstdc++-devel \
+  glibc-devel \
+  freetype-devel \
+  fontconfig-devel \
+  libxcb-devel \
+  xcb-util-cursor-devel \
+  libxkbcommon-devel \
+  wayland-devel \
+  systemd-devel \
+  libinput-devel \
+  mesa-libgbm-devel \
+  pipewire-devel \
+  pango-devel \
+  cairo-devel \
+  alsa-lib-devel \
+  llvm \
+  lld \
+  tar \
+  gzip \
+  openssl-devel \
+  dbus-devel \
+  libsmbclient-devel \
+  sqlite-devel \
+  alsa-lib-devel \
+  jack-audio-connection-kit-devel \
+  libpcap-devel \
+  libquadmath \
+  ncurses \
+  libseat-devel \
+  libdisplay-info-devel \
+  && dnf clean all
+# ==============================================================================
+COPY ContainerFiles/aocc-v6/aocc* /tmp/
+RUN cat /tmp/aocc* > /tmp/aocc.rpm && \
+    rpm -ivh --nodigest --nosignature /tmp/aocc.rpm && \
+    rm -f /tmp/aocc*
+# ==============================================================================
+ENV AOCC_DIR="/opt/AMD/aocc-compiler-6.0.0"
+ENV PATH="${AOCC_DIR}/bin:${PATH}"
+ENV LIBRARY_PATH="${AOCC_DIR}/lib:${AOCC_DIR}/lib32:${LIBRARY_PATH}"
+ENV LD_LIBRARY_PATH="${AOCC_DIR}/lib:${AOCC_DIR}/lib32:${LD_LIBRARY_PATH}"
+ENV C_INCLUDE_PATH="${AOCC_DIR}/include:${C_INCLUDE_PATH}"
+ENV CPLUS_INCLUDE_PATH="${AOCC_DIR}/include:${CPLUS_INCLUDE_PATH}"
+ENV RUSTUP_HOME="/usr/local/rustup"
+ENV CARGO_HOME="/usr/local/cargo"
+ENV PATH="/usr/local/cargo/bin:${PATH}"
+# ==============================================================================
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+    sh -s -- -y --default-toolchain nightly --profile minimal && \
+    rustup component add rust-src --toolchain nightly
+# ==============================================================================
+ENV CARGO_BUILD_TARGET="x86_64-unknown-linux-gnu" \
+    CARGO_BUILD_JOBS="16" \
+    CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER="aoc" \
+    CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C target-cpu=znver3 -C link-arg=-fuse-ld=lld -C link-arg=-l:libamdlibm.a -Z threads=16" \
+# ==============================================================================
+    CARGO_UNSTABLE_BUILD_STD="std,panic_abort" \
+    CARGO_UNSTABLE_PANIC_IMMEDIATE_ABORT="true" \
+    CARGO_UNSTABLE_PROFILE_RUSTFLAGS="true" \
+    CARGO_PROFILE_RELEASE_OPT_LEVEL="3" \
+    CARGO_PROFILE_RELEASE_LTO="fat" \
+    CARGO_PROFILE_RELEASE_CODEGEN_UNITS="1" \
+    CARGO_PROFILE_RELEASE_PANIC="immediate-abort" \
+    CARGO_PROFILE_RELEASE_STRIP="symbols" \
+# ==============================================================================
+    CC="aoc" \
+    CXX="aoc++" \
+    AR="llvm-ar" \
+    RANLIB="llvm-ranlib" \
+    CFLAGS="-O3 -march=znver3 -mtune=znver3 -zopt -fvector-transform -fscalar-transform -floop-transform -faggressive-loop-transform -fremap-arrays -fstruct-layout=7 -fveclib=AMDLIBM" \
+    CXXFLAGS="-O3 -march=znver3 -mtune=znver3 -zopt -fvector-transform -fscalar-transform -floop-transform -faggressive-loop-transform -fremap-arrays -fstruct-layout=7 -fveclib=AMDLIBM" \
+# ==============================================================================
+    PKG_CONFIG_PATH="/nonexistent" \
+    PKG_CONFIG_LIBDIR="/nonexistent" \
+    PKG_CONFIG_ALLOW_SYSTEM_CFLAGS="0" \
+    PKG_CONFIG_ALLOW_SYSTEM_LIBS="0" \
+    PKG_CONFIG_ALL_STATIC="1" \
+    LIBZ_SYS_STATIC="1" \
+    LIBZSTD_NO_PKG_CONFIG="1" \
+    BZIP2_SYS_STATIC="1" \
+    LZMA_API_STATIC="1" \
+    OPENSSL_NO_VENDOR="0" \
+    OPENSSL_STATIC="1" \
+    SODIUM_USE_PKG_CONFIG="0" \
+    SODIUM_STATIC="1" \
+    CURL_STATIC="1" \
+    LIBSSH2_SYS_USE_PKG_CONFIG="0" \
+    LIBGIT2_NO_PKG_CONFIG="1" \
+    LIBNGHTTP2_NO_PKG_CONFIG="1" \
+    SQLITE3_STATIC="1" \
+    DUCKDB_STATIC="1" \
+    PQ_LIB_STATIC="1" \
+    RUSTONIG_SYSTEM_LIBONIG="0" \
+    RUSTONIG_STATIC_LIBONIG="1" \
+    SDL2_STATIC="1" \
+    FREETYPE_SYS_STATIC="1" \
+    HARFBUZZ_SYS_NO_PKG_CONFIG="1" \
+    OPUS_STATIC="1" \
+    LIBOPUS_NO_PKG_CONFIG="1"
+# ==============================================================================
+FROM builder AS compiler
+# ==============================================================================
+WORKDIR /build
+RUN mkdir -p /out/bin
+# ==============================================================================
+RUN cargo install --locked --root /out \
+    fd-find \
+    bat \
+    eza \
+    zoxide \
+    pastel
+# ==============================================================================
+RUN cargo install --locked --root /out \
+    doxx \
+    xleak \
+    serie \
+    wrkflw
+# ==============================================================================
+RUN cargo install --locked --root /out \
+    kmon \
+    tree-sitter-cli \
+    herdr \
+    llmfit \
+    blue-build
+# ==============================================================================
+RUN cargo install --locked --root /out \
+    croft-software \
+    elio \
+    papr-tui \
+    wrkflw \
+    viddy 
+# ==============================================================================
+RUN cargo install --locked --root /out \
+    upmd \
+    xan \
+    edamame \
+    ripgrep \
+    llamastash 
+# ==============================================================================
+RUN env -u CFLAGS -u CXXFLAGS \
+    CFLAGS_x86_64_unknown_linux_gnu="-march=znver3 -mtune=znver3 -pipe" \
+    CXXFLAGS_x86_64_unknown_linux_gnu="-march=znver3 -mtune=znver3 -pipe" \
+    cargo install --locked --root /out \
+    eilmeldung
+# ==============================================================================
+RUN cargo install --locked --root /out --git https://gitlab.com/snipedbywifi/terminactory
+RUN cargo install --locked --root /out --git https://github.com/graiz/kittybrowser
+RUN cargo install --locked --root /out --git https://github.com/DingoOz/llm-visuals
+# ==============================================================================
+# [SPECIAL] ====================================================================
+RUN PKG_CONFIG_LIBDIR="/usr/lib64/pkgconfig:/usr/share/pkgconfig" \
+    PKG_CONFIG_ALLOW_SYSTEM_CFLAGS="1" \
+    PKG_CONFIG_ALLOW_SYSTEM_LIBS="1" \
+    PKG_CONFIG_ALL_STATIC="0" \
+    cargo install --locked --root /out asak
+# ==============================================================================
+RUN dnf install -y cairo-gobject-devel && dnf clean all
+RUN PKG_CONFIG_LIBDIR="/usr/lib64/pkgconfig:/usr/share/pkgconfig" \
+    PKG_CONFIG_ALLOW_SYSTEM_CFLAGS="1" \
+    PKG_CONFIG_ALLOW_SYSTEM_LIBS="1" \
+    PKG_CONFIG_ALL_STATIC="0" \
+    sh -c 'git clone --depth 1 https://github.com/niri-wm/niri.git && \
+           cargo build --release --locked --manifest-path niri/Cargo.toml && \
+           cp niri/target/x86_64-unknown-linux-gnu/release/niri /out/bin/ && \
+           cp niri/resources/niri-session /out/bin/ && \
+           chmod +x /out/bin/niri-session && \
+           rm -rf niri'
+# ==============================================================================
+RUN PKG_CONFIG_LIBDIR="/usr/lib64/pkgconfig:/usr/share/pkgconfig" \
+    PKG_CONFIG_ALLOW_SYSTEM_CFLAGS="1" \
+    PKG_CONFIG_ALLOW_SYSTEM_LIBS="1" \
+    PKG_CONFIG_ALL_STATIC="0" \
+    cargo install --locked --root /out --git https://github.com/Supreeeme/xwayland-satellite.git
+# ==============================================================================
+RUN PKG_CONFIG_LIBDIR="/usr/lib64/pkgconfig:/usr/share/pkgconfig" \
+    PKG_CONFIG_ALLOW_SYSTEM_CFLAGS="1" \
+    PKG_CONFIG_ALLOW_SYSTEM_LIBS="1" \
+    PKG_CONFIG_ALL_STATIC="0" \
+    cargo install --locked --root /out --git https://github.com/astral-sh/uv.git/ uv
+# ==============================================================================
+RUN dnf install -y vulkan-loader-devel glslc && dnf clean all
+RUN PKG_CONFIG_LIBDIR="/usr/lib64/pkgconfig:/usr/share/pkgconfig" \
+    PKG_CONFIG_ALLOW_SYSTEM_CFLAGS="1" \
+    PKG_CONFIG_ALLOW_SYSTEM_LIBS="1" \
+    PKG_CONFIG_ALL_STATIC="0" \
+    cargo install --locked --root /out \
+        --git https://github.com/peteonrails/voxtype.git \
+        --features gpu-vulkan,osd-native \
+        voxtype
+# ==============================================================================
+RUN rm -f /out/.crates.toml /out/.crates2.json
+# ==============================================================================
+FROM scratch AS export
+COPY --from=compiler /out/bin/ /usr/bin/

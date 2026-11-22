@@ -1,0 +1,52 @@
+# ==============================================================================
+# STAGE 1: Fedora 44 + Bun Builder
+# ==============================================================================
+FROM fedora:44 AS builder
+
+RUN dnf install -y \
+    curl unzip git ca-certificates && \
+    dnf clean all
+
+# Install Bun (official Linux x64 binary auto-dispatches AVX2 on Ryzen 5700G)
+ENV BUN_INSTALL="/usr/local/bun"
+ENV PATH="${BUN_INSTALL}/bin:${PATH}"
+
+RUN curl -fsSL https://bun.sh | bash
+
+# ==============================================================================
+# STAGE 2: Bundle & Compile JS/TS Apps into Standalone ELF Binaries
+# ==============================================================================
+FROM builder AS compiler
+
+WORKDIR /build
+RUN mkdir -p /out/bin
+
+# --- PATTERN A: Compile a GitHub TypeScript/JavaScript CLI Repo ---
+# Flags explained:
+#   --compile     : Embeds the Bun runtime + app into a single standalone ELF binary
+#   --minify      : Minifies JS/TS syntax and identifiers
+#   --bytecode    : Pre-compiles JS to JavaScriptCore bytecode for instant cold startup
+#   --target      : Explicitly targets glibc Linux x64 (bun-linux-x64)
+#
+# RUN git clone --depth 1 https://github.com && \
+#     cd ts-cli-app && \
+#     bun install --frozen-lockfile --production && \
+#     bun build --compile --minify --bytecode \
+#         --target=bun-linux-x64 \
+#         ./src/index.ts \
+#         --outfile /out/bin/my-ts-cli
+
+# --- PATTERN B: Compile an npm package CLI directly ---
+# RUN mkdir -p /build/pkg && cd /build/pkg && \
+#     bun add some-ts-cli-package && \
+#     bun build --compile --minify --bytecode \
+#         --target=bun-linux-x64 \
+#         ./node_modules/some-ts-cli-package/bin/cli.js \
+#         --outfile /out/bin/some-cli
+
+# ==============================================================================
+# STAGE 3: Minimal Artifact Image (Copy this into your BlueBuild image)
+# ==============================================================================
+FROM scratch AS export
+COPY --from=compiler /out/bin/ /usr/bin/
+
