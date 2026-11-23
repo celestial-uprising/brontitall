@@ -205,6 +205,55 @@ RUN PKG_CONFIG_LIBDIR="/usr/lib64/pkgconfig:/usr/share/pkgconfig" \
         --features gpu-vulkan,osd-native \
         voxtype
 # ==============================================================================
+# [NEW PKGS]====================================================================
+RUN cargo install --locked --root /out \
+    rulc \
+    tuicr \
+    sping \
+    reknife \
+    abtop
+RUN cargo install --locked --root /out \
+    emeraldian \
+    mandible \
+    rwx \
+    drydock \
+    dtop
+RUN cargo install --locked --root /out \
+    scope-monitor \
+    amdtop \
+    yazi-fm \
+    yazi-cli \
+    just
+RUN cargo install --locked --root /out \
+    mise \
+    atuin \
+    git-delta \
+    zellij \
+    hyperfine
+RUN cargo install --locked --root /out \
+    fnm \
+    exa \
+    rustscan \
+    hurl \
+    difftastic
+RUN cargo install --locked --root /out \
+    spotify-tui \
+    gitui \
+    navi \
+    ast-grep
+# ==============================================================================
+RUN cargo install --locked --root /out --git https://github.com/nasedkinpv/numr.git numr-tui
+RUN cargo install --locked --root /out --git https://github.com/nasedkinpv/numr.git numr-cli
+RUN cargo install --profile opt --locked --root /out --git https://github.com/helix-editor/helix helix-term 
+RUN cargo install --locked --root /out --git https://github.com/findyourexit/zonetimeline-tui
+RUN cargo install --locked --root /out --git https://github.com/googleworkspace/cli
+RUN cargo install --locked --root /out --git https://github.com/asciinema/asciinema
+# ==============================================================================
+RUN cargo install --locked --root /out \
+    jj \
+    jj-cli 
+#---> cargo install --locked --bin jj jj-cli
+# ==============================================================================
 RUN rm -f /out/.crates.toml /out/.crates2.json
 # ==============================================================================
 FROM scratch AS export
